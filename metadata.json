@@ -1,0 +1,6 @@
+{
+  "name": "Markdown Editor and Document Converter",
+  "description": "A high-performance browser-based Markdown editor and document converter with live premium rendering, offline PWA access, automated Persian/RTL detection, and PDF, DOCX, and TXT import and export engines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

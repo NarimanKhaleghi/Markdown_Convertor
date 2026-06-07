@@ -1,0 +1,25 @@
+{
+  "short_name": "DocConvert",
+  "name": "Markdown Editor and Document Converter",
+  "description": "High-performance browser-based Markdown editor and document converter with offline PWA support, PDF/DOCX/TXT conversion engines, and native Persian/RTL alignment.",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/npm/lucide-static@0.344.0/icons/file-text.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/npm/lucide-static@0.344.0/icons/file-text.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "display": "standalone",
+  "orientation": "portrait",
+  "categories": ["productivity", "utilities"]
+}
