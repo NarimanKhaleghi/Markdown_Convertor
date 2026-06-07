@@ -28,6 +28,7 @@ export interface ListItem {
   checked?: boolean; // undefined = standard item, true = checked task, false = unchecked task
   level: number; // nesting level (0-indexed)
   items?: ListItem[]; // sub items
+  number?: number;
 }
 
 export interface DocumentState {

@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Plus, ShieldCheck, HelpCircle, Laptop, Settings, 
   Menu, X, Sparkles, RefreshCcw, FileSignature, AlertCircle, Check,
-  CloudLightning, Smartphone, Globe, Copy, Info, Edit3, Eye
+  CloudLightning, Smartphone, Globe, Copy, Info, Edit3, Eye, Github
 } from 'lucide-react';
 import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
@@ -34,6 +34,30 @@ interface Toast {
 }
 
 export default function App() {
+  // Sync window height with visual viewport to prevent iOS/Android keyboard scroll bugs
+  const [viewportHeight, setViewportHeight] = useState<string>('100vh');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updateHeight = () => {
+      const heightVal = window.visualViewport ? `${window.visualViewport.height}px` : '100vh';
+      setViewportHeight(heightVal);
+    };
+
+    updateHeight();
+
+    window.visualViewport?.addEventListener('resize', updateHeight);
+    window.visualViewport?.addEventListener('scroll', updateHeight);
+    window.addEventListener('resize', updateHeight);
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', updateHeight);
+      window.visualViewport?.removeEventListener('scroll', updateHeight);
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
+
   // --- Toast Notifications State ---
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -73,7 +97,6 @@ export default function App() {
   const [currentFileName, setCurrentFileName] = useState<string>('document.md');
   const [uiMode, setUiMode] = useState<UIMode>('split');
   const [exportStatus, setExportStatus] = useState<ExportStatus>('idle');
-  const [forceRTL, setForceRTL] = useState<boolean>(false);
   
   // PWA and offline parameters
   const [isInstallable, setIsInstallable] = useState(false);
@@ -93,8 +116,62 @@ export default function App() {
   const [showTestMatrix, setShowTestMatrix] = useState<boolean>(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [showUrlImportModal, setShowUrlImportModal] = useState<boolean>(false);
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState<boolean>(false);
   const [importUrlInput, setImportUrlInput] = useState<string>('');
   const [showIosInstallModal, setShowIosInstallModal] = useState<boolean>(false);
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const [showGithubModal, setShowGithubModal] = useState<boolean>(false);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return !localStorage.getItem('md_converter_onboarded_v2');
+    }
+    return false;
+  });
+  const [onboardingStep, setOnboardingStep] = useState<number>(1);
+  const handleCloseOnboarding = () => {
+    localStorage.setItem('md_converter_onboarded_v2', 'true');
+    setShowOnboarding(false);
+  };
+  const [isStandalone, setIsStandalone] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      setIsStandalone(e.matches);
+    };
+    mediaQuery.addEventListener('change', handleMediaChange);
+    return () => mediaQuery.removeEventListener('change', handleMediaChange);
+  }, []);
+
+  const handleToggleFullScreen = () => {
+    setIsFullScreen(prev => {
+      const next = !prev;
+      if (next) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } else {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
 
   // Auto-saving visual engine state
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -109,6 +186,7 @@ export default function App() {
   // Scroll Sync Flag locks (prevents infinite recursive scroll loops)
   const isSyncingScrollRef = useRef<boolean>(false);
   const activeScrollerRef = useRef<'editor' | 'preview' | null>(null);
+  const lastScrollRatioRef = useRef<number>(0);
 
   // --- Optimization: Debounced Editor State for AST Parsing ---
   const [debouncedContent, setDebouncedContent] = useState<string>(editorContent);
@@ -172,16 +250,22 @@ export default function App() {
 
   // --- Synchronized Scrolling Engine ---
   const handleEditorScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    const textarea = e.currentTarget;
+    if (!textarea) return;
+
+    // Save scroll position ratio
+    const denom = textarea.scrollHeight - textarea.clientHeight;
+    const percentage = denom > 0 ? (textarea.scrollTop / denom) : 0;
+    lastScrollRatioRef.current = percentage;
+
     if (uiMode !== 'split' || isSyncingScrollRef.current) return;
     if (activeScrollerRef.current && activeScrollerRef.current !== 'editor') return;
 
     activeScrollerRef.current = 'editor';
     isSyncingScrollRef.current = true;
 
-    const textarea = e.currentTarget;
     const preview = previewRef.current;
-    if (textarea && preview) {
-      const percentage = textarea.scrollTop / (textarea.scrollHeight - textarea.clientHeight);
+    if (preview) {
       preview.scrollTop = percentage * (preview.scrollHeight - preview.clientHeight);
     }
 
@@ -192,16 +276,22 @@ export default function App() {
   };
 
   const handlePreviewScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const preview = e.currentTarget;
+    if (!preview) return;
+
+    // Save scroll position ratio
+    const denom = preview.scrollHeight - preview.clientHeight;
+    const percentage = denom > 0 ? (preview.scrollTop / denom) : 0;
+    lastScrollRatioRef.current = percentage;
+
     if (uiMode !== 'split' || isSyncingScrollRef.current) return;
     if (activeScrollerRef.current && activeScrollerRef.current !== 'preview') return;
 
     activeScrollerRef.current = 'preview';
     isSyncingScrollRef.current = true;
 
-    const preview = e.currentTarget;
     const textarea = textareaRef.current;
-    if (preview && textarea) {
-      const percentage = preview.scrollTop / (preview.scrollHeight - preview.clientHeight);
+    if (textarea) {
       textarea.scrollTop = percentage * (textarea.scrollHeight - textarea.clientHeight);
     }
 
@@ -210,6 +300,28 @@ export default function App() {
       activeScrollerRef.current = null;
     }, 50);
   };
+
+  // Sync scroll ratio section on mode changes (editor <=> preview <=> split)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const ratio = lastScrollRatioRef.current;
+      const textarea = textareaRef.current;
+      if (textarea && uiMode !== 'preview') {
+        const denom = textarea.scrollHeight - textarea.clientHeight;
+        if (denom > 0) {
+          textarea.scrollTop = ratio * denom;
+        }
+      }
+      const preview = previewRef.current;
+      if (preview && uiMode !== 'editor') {
+        const denom = preview.scrollHeight - preview.clientHeight;
+        if (denom > 0) {
+          preview.scrollTop = ratio * denom;
+        }
+      }
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [uiMode]);
 
   // --- Network status callbacks ---
   useEffect(() => {
@@ -320,9 +432,9 @@ export default function App() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       } else if (format === 'html') {
-        exportToHTML(renderedHTML, currentFileName, forceRTL || overallRTL);
+        exportToHTML(renderedHTML, currentFileName, overallRTL);
       } else if (format === 'docx') {
-        exportToDOCX(renderedHTML, currentFileName, forceRTL || overallRTL);
+        exportToDOCX(renderedHTML, currentFileName, overallRTL);
       } else if (format === 'txt') {
         exportToTXT(blocks, currentFileName);
       }
@@ -551,27 +663,17 @@ export default function App() {
   };
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-zinc-950 font-sans transition-colors duration-200 ${language === 'fa' ? 'rtl text-right' : 'ltr text-left'}`}>
+    <div style={{ height: viewportHeight }} className={`fixed inset-0 flex flex-col overflow-hidden bg-slate-50 dark:bg-zinc-950 font-sans transition-colors duration-200 ${language === 'fa' ? 'rtl text-right' : 'ltr text-left'}`}>
       
       {/* Dynamic SEO Head Title Synchronized Content (Implicit document rendering values) */}
-      <Header
-        uiMode={uiMode}
-        onChangeUiMode={setUiMode}
-        onImportFile={handleImportFile}
-        onExport={handleExportDocument}
-        exportStatus={exportStatus}
-        isInstallable={isInstallable}
-        onTriggerInstall={triggerInstallApp}
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
-        
-        language={language}
-        onToggleLanguage={() => setLanguage(language === 'en' ? 'fa' : 'en')}
-        savingStatus={savingStatus}
-        onOpenUrlImport={() => setShowUrlImportModal(true)}
-        onOpenIosInstallGuide={() => setShowIosInstallModal(true)}
-        isIOS={isIOSDevice}
-      />
+      {!isFullScreen && (
+        <Header
+          uiMode={uiMode}
+          onChangeUiMode={setUiMode}
+          language={language}
+          savingStatus={savingStatus}
+        />
+      )}
 
       {/* Main Sandbox Workspace Layout */}
       <div className="flex flex-1 min-h-0 relative pb-[68px] md:pb-0">
@@ -583,13 +685,24 @@ export default function App() {
             getTextarea={() => textareaRef.current}
             onContentChange={setEditorContent}
             onClear={() => {
-              if (window.confirm(t.clearWorkspaceConfirm)) {
-                setEditorContent('');
-              }
+              setShowClearConfirmModal(true);
             }}
-            forceRTL={forceRTL}
-            onToggleForceRTL={() => setForceRTL(!forceRTL)}
             language={language}
+            isFullScreen={isFullScreen}
+            onToggleFullScreen={handleToggleFullScreen}
+            onImportFile={handleImportFile}
+            onExport={handleExportDocument}
+            exportStatus={exportStatus}
+            isInstallable={isInstallable}
+            onTriggerInstall={triggerInstallApp}
+            darkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode(!darkMode)}
+            onToggleLanguage={() => setLanguage(language === 'en' ? 'fa' : 'en')}
+            onOpenUrlImport={() => setShowUrlImportModal(true)}
+            onOpenIosInstallGuide={() => setShowIosInstallModal(true)}
+            isStandalone={isStandalone}
+            onOpenGithubModal={() => setShowGithubModal(true)}
+            onCopyPlainText={handleCopyPlainTextFromPreview}
           />
 
           {/* Action alerts panel for visual diagnostics */}
@@ -611,7 +724,7 @@ export default function App() {
           {/* Dual Panel Split/Full Screen Router */}
           <div className="flex-1 flex min-h-0">
             {/* Editor viewport */}
-            {(uiMode === 'editor' || uiMode === 'split') && (
+            <div className={`flex-1 min-w-0 h-full ${uiMode === 'preview' ? 'hidden' : 'flex'}`}>
               <EditorPanel
                 content={editorContent}
                 onContentChange={setEditorContent}
@@ -619,25 +732,24 @@ export default function App() {
                 wordCount={wordCount}
                 characterCount={characterCount}
                 textareaRef={textareaRef}
-                forceRTL={forceRTL}
                 language={language}
                 onSelectText={setSelectedText}
                 onScroll={handleEditorScroll}
               />
-            )}
+            </div>
 
             {/* Compiled Preview rendering viewport */}
-            {(uiMode === 'preview' || uiMode === 'split') && (
+            <div className={`flex-1 min-w-0 h-full ${uiMode === 'editor' ? 'hidden' : 'flex'}`}>
               <PreviewPanel
                 htmlContent={renderedHTML}
-                isRTL={forceRTL || overallRTL}
+                isRTL={overallRTL}
                 language={language}
                 onCopyPlainText={handleCopyPlainTextFromPreview}
                 selectedText={selectedText}
                 previewRef={previewRef}
                 onScroll={handlePreviewScroll}
               />
-            )}
+            </div>
           </div>
         </div>
       </div>
@@ -684,6 +796,66 @@ export default function App() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* --- Beautiful Dynamic Confirmation Modal for Clearing Workspace --- */}
+      {showClearConfirmModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-3xs" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl flex flex-col font-sans-fa relative">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-zinc-850 mb-4">
+              <span className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center text-indigo-500 shrink-0">
+                <AlertCircle className="w-5 h-5 animate-pulse" />
+              </span>
+              <span className="text-sm font-extrabold text-slate-900 dark:text-zinc-100">
+                {language === 'fa' ? 'تایید پاک‌سازی بوم' : 'Confirm Clear Canvas'}
+              </span>
+            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6 font-bold">
+              {language === 'fa' 
+                ? 'آیا از پاک کردن کامل متن ادیتور اطمینان دارید؟ این عمل غیرقابل بازگشت است.' 
+                : 'Are you sure you want to completely clear the editor content? This action cannot be undone.'}
+            </p>
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => setShowClearConfirmModal(false)}
+                className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-805 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-black transition-colors cursor-pointer"
+                type="button"
+              >
+                {language === 'fa' ? 'انصراف' : 'Cancel'}
+              </button>
+              <button
+                onClick={() => {
+                  setEditorContent('');
+                  setShowClearConfirmModal(false);
+                }}
+                className="flex-1 py-2 bg-indigo-650 hover:bg-indigo-600 text-white font-black rounded-xl text-xs transition-colors cursor-pointer shadow-md shadow-indigo-600/10"
+                type="button"
+              >
+                {language === 'fa' ? 'بله، پاک شود' : 'Yes, clear it'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile-only Preview Stats Bar - Hides completely when keyboard/editor has precedence */}
+      {uiMode === 'preview' && (
+        <div className="md:hidden fixed bottom-[72px] left-4 right-4 z-[90] flex items-center justify-between bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border border-slate-200/80 dark:border-zinc-850 py-2.5 px-4 rounded-2xl shadow-xl flex-row text-[11px] text-zinc-500 dark:text-zinc-505 font-sans-fa">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5">
+              <span className="text-slate-400 dark:text-zinc-500 font-bold tracking-wider text-[10px]">{t.words}</span>
+              <strong className="text-slate-705 dark:text-zinc-350">{wordCount}</strong>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-slate-400 dark:text-zinc-500 font-bold tracking-wider text-[10px]">{t.characters}</span>
+              <strong className="text-slate-705 dark:text-zinc-350">{characterCount}</strong>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400 dark:text-zinc-500 font-bold tracking-wider text-[10px]">{t.align}</span>
+            <strong className="text-slate-705 dark:text-zinc-350 font-bold">{overallRTL ? 'RTL' : 'LTR'}</strong>
           </div>
         </div>
       )}
@@ -775,6 +947,263 @@ export default function App() {
               >
                 {t.iosInstallClose}
               </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* --- Beautiful GitHub Star Invitation Modal --- */}
+      {showGithubModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-3xs" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl flex flex-col font-sans-fa relative">
+            
+            {/* Top Close Button (X) */}
+            <button 
+              onClick={() => setShowGithubModal(false)}
+              className="absolute top-4 left-4 rtl:left-auto rtl:right-4 ltr:right-4 ltr:left-auto p-1.5 hover:bg-slate-150 dark:hover:bg-zinc-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+              type="button"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Icon Content */}
+            <div className="flex flex-col items-center text-center mt-3">
+              <div className="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 animate-bounce">
+                <Github className="w-7 h-7" />
+              </div>
+              
+              <h3 className="text-base font-black text-slate-900 dark:text-zinc-50 mb-2 leading-none">
+                {language === 'fa' ? 'حمایت از پروژه با ستاره گیت‌هاب ⭐️' : 'Support with a GitHub Star ⭐'}
+              </h3>
+              
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-[280px] mb-6">
+                {language === 'fa'
+                  ? 'اگر مبدل مارکداون (MD Converter) براتون مفید بوده و کارتون رو راه انداخته، با دادن یک ستاره به پروژه در گیت‌هاب از من حمایت کنید، دمتون گرم!'
+                  : 'If MD Converter has helped you translate or process files, consider supporting the development by giving the project a star on GitHub.'}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="w-full space-y-2">
+                <a
+                  href="https://github.com/NarimanKhaleghi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setShowGithubModal(false)}
+                  className="block w-full text-center py-2.5 bg-zinc-900 hover:bg-zinc-850 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-md text-slate-100 font-sans-fa"
+                >
+                  {language === 'fa' ? '⭐️ ثبت ستاره در گیت‌هاب' : '⭐ See Profile & Give Star'}
+                </a>
+                
+                <button
+                  onClick={() => setShowGithubModal(false)}
+                  className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-805 text-zinc-650 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold transition-colors cursor-pointer font-sans-fa"
+                  type="button"
+                >
+                  {language === 'fa' ? 'بستن' : 'Close'}
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      )}
+
+      {/* --- Elegant Step-by-Step Interactive Onboarding Modal --- */}
+      {showOnboarding && (() => {
+        const activeStepData = [
+          {
+            step: 1,
+            title: language === 'fa' ? 'زبان نشانه‌گذاری مارکداون چیست؟ 📝' : 'What is Markdown? 📝',
+            desc: language === 'fa'
+              ? 'مارکداون (Markdown) یک سیستم نوشتن فوق‌العاده ساده و بی‌دردسر است. به جای منوهای پیچیده، با تایپ کردن کاراکترهای ساده متن خود را فرمت‌دهی می‌کنید (مثلاً # برای عنوان و ** برای ضخیم کردن). این مبدل، کدهای شما را فوراً به خروجی‌های استاندارد تبدیل می‌کند.'
+              : 'Markdown is a lightweight markup language. Rather than fighting complex formatting menus, easily structure headings, links, tables, and bold texts using pure, clear characters.',
+            icon: <Sparkles className="w-8 h-8 text-indigo-500 animate-spin-slow" />,
+            features: language === 'fa'
+              ? [
+                  'تراز هوشمند خودکار متون راست‌به‌چپ (RTL/فارسی)',
+                  'پیش‌نمایش زنده بی‌وقت و ویرایشگر سریع دوطرفه',
+                  'پشتیبانی از فرمت‌های Word (docx.)، مارکداون و کدهای برنامه'
+                ]
+              : [
+                  'Smart RTL alignment tailored perfectly for Persian fonts',
+                  'Zero-delay side-by-side editing & dual real-time rendering',
+                  'Imports files like Word (.docx), converting them to clean markdown offline'
+                ]
+          },
+          {
+            step: 2,
+            title: language === 'fa' ? 'نصب مستقل و کارکرد ۱۰۰٪ آفلاین 📱' : 'Install PWA for 100% Offline Power 📱',
+            desc: language === 'fa'
+              ? 'بزرگترین مزیت این برنامه مستقل بودن کامل آن از اینترنت و سرور (کلاینت ساید) است! با نصب وب‌اپلیکیشن (PWA) روی دسکتاپ یا گوشی همراه خود، همواره میانبر سریعی دارید که بدون نیاز به اینترنت و با بیشترین سرعت بالا می‌آید.'
+              : 'Our application executes entirely on your local browser engine. By installing it as a Progressive Web App (PWA), you get a launcher that boots instantly, securely, and offline without requiring active headers.',
+            icon: <Smartphone className="w-8 h-8 text-emerald-500 animate-bounce" />,
+            features: language === 'fa'
+              ? [
+                  'اجرای پرسرعت و کاملاً مستقل از اینترنت و شبکه',
+                  'میانبر بومی روی صفحه خانگی و تسک‌بار شما',
+                  'حفظ ۱۰۰٪ محرمانگی کل اسناد در لوکال استورج'
+                ]
+              : [
+                  'Run at ultra-speed with zero internet connection needed',
+                  'Clean launch shortcut directly from your desktop or mobile dock',
+                  'Secure browser sandboxed storage prioritizing document privacy'
+                ]
+          },
+          {
+            step: 3,
+            title: language === 'fa' ? 'حمایت از نویسنده با ستاره گیت‌هاب ⭐️' : 'Give Us a GitHub Support Star ⭐',
+            desc: language === 'fa'
+              ? 'توسعه این برنامه کاملاً رایگان، متن‌باز و بدون تبلیغات انجام شده است. اگر این ابزار به کارتون اومده و تجربه‌تون رو بهتر کرده، با اهدا یک ستاره به پروژه در گیت‌هاب از کارهای مستقل حمایت کنید. بی‌نهایت سپاسگزارم!'
+              : 'This library is completely open-source, advertising-free, and gratis. If MD Converter has helped you parse syntax, build HTML tables, or import Word documents (.docx), consider giving the project a quick star on GitHub!',
+            icon: <Github className="w-8 h-8 text-indigo-600 dark:text-zinc-200" />,
+            features: language === 'fa'
+              ? [
+                  'حمایت مستقیم و بی‌هزینه از توسعه برنامه‌های بومی مستقل',
+                  'کمک به دیده شدن ابزار برای سایر نویسندگان و کاربران',
+                  'پشتیبانی از کارهای رایگان بعدی نویسنده'
+                ]
+              : [
+                  'No cost, quick developer motivation support',
+                  'Help other writers and typists discover this independent editor',
+                  'Help independent creators make helpful software for free'
+                ]
+          }
+        ][onboardingStep - 1] || {
+          step: 1,
+          title: '',
+          desc: '',
+          icon: null,
+          features: []
+        };
+
+        return (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl flex flex-col font-sans-fa relative animate-fade-in">
+              
+              {/* Skip / Close Top Button */}
+              <button 
+                onClick={handleCloseOnboarding}
+                className="absolute top-4 left-4 rtl:left-auto rtl:right-4 ltr:right-4 ltr:left-auto p-1.5 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg text-slate-450 hover:text-slate-650 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                type="button"
+                title={language === 'fa' ? 'رد کردن راهنما' : 'Skip walkthrough'}
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Progress Tracker bar */}
+              <div className="flex items-center gap-1.5 justify-center mb-5 mt-1">
+                {[1, 2, 3].map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setOnboardingStep(s)}
+                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                      s === onboardingStep 
+                        ? 'w-7 bg-indigo-600 dark:bg-indigo-500' 
+                        : 'w-1.5 bg-slate-200 dark:bg-zinc-805 hover:bg-slate-300 dark:hover:bg-zinc-700'
+                    }`}
+                    type="button"
+                  />
+                ))}
+              </div>
+
+              {/* Step Content Icon */}
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-zinc-850/60 flex items-center justify-center mb-4 border border-slate-100 dark:border-zinc-800">
+                  {activeStepData.icon}
+                </div>
+
+                <h3 className="text-base font-black text-slate-900 dark:text-zinc-50 mb-3 tracking-tight">
+                  {activeStepData.title}
+                </h3>
+
+                <p className="text-xs text-zinc-650 dark:text-zinc-400 leading-relaxed max-w-sm mb-5">
+                  {activeStepData.desc}
+                </p>
+
+                {/* Nice Features checklist for step */}
+                <div className="w-full bg-slate-50 dark:bg-zinc-850/40 rounded-xl p-4 border border-slate-100/70 dark:border-zinc-850/60 mb-6 text-right rtl:text-right ltr:text-left space-y-2.5">
+                  {activeStepData.features.map((feature, i) => (
+                    <div key={i} className="flex items-start gap-2 text-zinc-700 dark:text-zinc-350 text-[11px] font-bold">
+                      <span className="w-4 h-4 rounded-full bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center text-indigo-500 shrink-0 mt-0.5">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </span>
+                      <span className="leading-tight">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Custom Action details (e.g., PWA install or stars) */}
+                {onboardingStep === 2 && !isStandalone && (
+                  <button
+                    onClick={() => {
+                      if (isInstallable) {
+                        triggerInstallApp();
+                      } else {
+                        setShowIosInstallModal(true);
+                      }
+                      handleCloseOnboarding();
+                    }}
+                    className="w-full mb-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40 font-bold rounded-xl text-xs transition-colors cursor-pointer border border-emerald-100 dark:border-emerald-900/40 flex items-center justify-center gap-1.5"
+                    type="button"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>{language === 'fa' ? '📱 نصب نسخه مستقل وب‌اپلیکیشن' : '📱 Install Web App Version'}</span>
+                  </button>
+                )}
+
+                {onboardingStep === 3 && (
+                  <a
+                    href="https://github.com/NarimanKhaleghi"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleCloseOnboarding}
+                    className="w-full mb-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/25 dark:text-indigo-400 dark:hover:bg-indigo-950/45 font-bold rounded-xl text-xs transition-colors cursor-pointer border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-center gap-1.5"
+                  >
+                    <Github className="w-3.5 h-3.5" />
+                    <span>{language === 'fa' ? '⭐️ ثبت ستاره و حمایت در گیت‌هاب' : '⭐ Star Us on GitHub'}</span>
+                  </a>
+                )}
+
+                {/* Primary navigation Buttons */}
+                <div className="flex gap-2 w-full mt-1.5">
+                  {onboardingStep > 1 ? (
+                    <button
+                      onClick={() => setOnboardingStep(prev => prev - 1)}
+                      className="flex-1 py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-850 rounded-xl text-xs font-black transition-colors cursor-pointer font-sans-fa"
+                      type="button"
+                    >
+                      {language === 'fa' ? 'قبلی' : 'Back'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleCloseOnboarding}
+                      className="flex-1 py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 text-zinc-450 dark:text-zinc-400 border border-slate-100 dark:border-zinc-850 rounded-xl text-xs font-semibold transition-colors cursor-pointer font-sans-fa"
+                      type="button"
+                    >
+                      {language === 'fa' ? 'متوجه شدم' : 'Got it'}
+                    </button>
+                  )}
+
+                  {onboardingStep < 3 ? (
+                    <button
+                      onClick={() => setOnboardingStep(prev => prev + 1)}
+                      className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs transition-colors cursor-pointer font-sans-fa shadow-md hover:shadow-indigo-500/10"
+                      type="button"
+                    >
+                      {language === 'fa' ? 'بعدی' : 'Next'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleCloseOnboarding}
+                      className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-850 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-slate-100 dark:text-white font-black rounded-xl text-xs transition-colors cursor-pointer font-sans-fa shadow-md"
+                      type="button"
+                    >
+                      {language === 'fa' ? 'اتمام و شروع کار 🚀' : 'Start Writing! 🚀'}
+                    </button>
+                  )}
+                </div>
+
+              </div>
             </div>
           </div>
         );

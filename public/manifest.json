@@ -1,6 +1,6 @@
 {
-  "short_name": "DocConvert",
-  "name": "Markdown Editor and Document Converter",
+  "short_name": "MD Converter",
+  "name": "MD Converter",
   "description": "High-performance browser-based Markdown editor and document converter with offline PWA support, PDF/DOCX/TXT conversion engines, and native Persian/RTL alignment.",
   "icons": [
     {

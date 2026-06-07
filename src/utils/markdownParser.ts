@@ -39,8 +39,8 @@ export function parseInlineContent(text: string): string {
   // 1. Temporary placeholder array to hide inline code from subsequent regexes
   const codeSpans: string[] = [];
   result = result.replace(/`([^`]+)`/g, (_, code) => {
-    const placeholder = `___CODESPAN_PLACEHOLDER_${codeSpans.length}___`;
-    codeSpans.push(`<code class="px-1.5 py-0.5 rounded bg-gray-100 text-rose-500 text-xs font-mono dark:bg-zinc-800 dark:text-rose-400 border border-gray-200 dark:border-zinc-700">${code}</code>`);
+    const placeholder = `@@@CODESPANPLACEHOLDER${codeSpans.length}@@@`;
+    codeSpans.push(`<code class="px-1.5 py-0.5 rounded bg-indigo-50/50 text-indigo-650 text-xs font-mono dark:bg-indigo-950/20 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30">${code}</code>`);
     return placeholder;
   });
 
@@ -65,7 +65,7 @@ export function parseInlineContent(text: string): string {
 
   // 5. Restore code spans
   codeSpans.forEach((formattedCode, index) => {
-    result = result.replace(`___CODESPAN_PLACEHOLDER_${index}___`, formattedCode);
+    result = result.replace(`@@@CODESPANPLACEHOLDER${index}@@@`, formattedCode);
   });
 
   return result;
@@ -270,6 +270,7 @@ export function parseMarkdownToBlocks(markdown: string): MarkdownBlock[] {
         if (!itemMatch) break;
 
         const spacesCount = itemMatch[1].length;
+        const marker = itemMatch[2];
         const bodyContent = itemMatch[3];
 
         // Level calculated based on approximate 2 or 4 spaces indentation
@@ -283,11 +284,14 @@ export function parseMarkdownToBlocks(markdown: string): MarkdownBlock[] {
           itemText = bodyContent.slice(3).trim();
         }
 
+        const parsedNum = /^\d+/.test(marker) ? parseInt(marker, 10) : undefined;
+
         listItems.push({
           id: generateId(),
           text: itemText,
           checked,
-          level: itemLevel
+          level: itemLevel,
+          number: parsedNum
         });
 
         i++;
@@ -467,7 +471,8 @@ export function renderBlocksToHTML(blocks: MarkdownBlock[]): string {
                 <span class="flex-1">${itemContent}</span>
               </li>`;
             } else {
-              html += `<li class="text-zinc-700 dark:text-zinc-300 leading-normal mb-1">${itemContent}</li>`;
+              const valAttr = item.number !== undefined ? `value="${item.number}"` : '';
+              html += `<li ${valAttr} class="text-zinc-700 dark:text-zinc-300 leading-normal mb-1">${itemContent}</li>`;
             }
           }
 

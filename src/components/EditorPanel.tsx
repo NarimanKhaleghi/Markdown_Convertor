@@ -15,7 +15,6 @@ interface EditorPanelProps {
   wordCount: number;
   characterCount: number;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
-  forceRTL: boolean;
   language: 'en' | 'fa';
   onSelectText?: (text: string) => void;
   onScroll?: (e: React.UIEvent<HTMLTextAreaElement>) => void;
@@ -28,7 +27,6 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   wordCount,
   characterCount,
   textareaRef,
-  forceRTL,
   language,
   onSelectText,
   onScroll
@@ -71,7 +69,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
 
   // Automated language reading line alignment analysis
   const autoDetectRTL = isRTLText(content.substring(0, 300));
-  const isCurrentlyRTL = forceRTL || autoDetectRTL;
+  const isCurrentlyRTL = autoDetectRTL;
 
   return (
     <div 
@@ -114,7 +112,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
       </div>
 
       {/* Editor footer status bar */}
-      <footer className="flex items-center justify-between gap-6 px-6 py-3 bg-white dark:bg-zinc-950 text-[11px] text-slate-500 dark:text-zinc-500 border-t border-slate-200 dark:border-zinc-850 select-none font-sans shrink-0">
+      <footer className="hidden md:flex items-center justify-between gap-6 px-6 py-3 bg-white dark:bg-zinc-950 text-[11px] text-slate-500 dark:text-zinc-500 border-t border-slate-200 dark:border-zinc-850 select-none font-sans shrink-0">
         <div className="flex items-center gap-6">
           <span className="flex items-center gap-1.5">
             <span className="text-slate-400 dark:text-zinc-500 font-bold tracking-wider text-[10px]">{t.words}</span>

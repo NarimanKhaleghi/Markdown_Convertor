@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { Eye, BookOpen, Copy } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { translations } from '../utils/translations';
 
 interface PreviewPanelProps {
@@ -103,29 +103,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
   return (
     <div className="flex flex-col flex-1 h-full min-w-0 bg-slate-50 dark:bg-zinc-950">
-      {/* Header bar for Preview container */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-slate-200 dark:border-zinc-850 bg-white dark:bg-zinc-950 font-sans text-xs text-slate-500 select-none shrink-0">
-        <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-zinc-400">
-          <Eye className="w-4 h-4 text-indigo-650" />
-          <span>{language === 'fa' ? 'پیش‌نمایش سند زنده' : 'Live Document Preview'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Copy Plain Text Button */}
-          <button
-            onClick={onCopyPlainText}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-slate-700 hover:text-indigo-650 dark:text-zinc-350 dark:hover:text-indigo-400 bg-slate-50 dark:bg-zinc-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 rounded border border-slate-200 hover:border-indigo-200 dark:border-zinc-800 transition-colors shadow-xs cursor-pointer mr-2"
-            type="button"
-          >
-            <Copy className="w-3.5 h-3.5" />
-            <span>{t.copyPlainText}</span>
-          </button>
-          
-          <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/20 px-2 py-0.5 rounded border border-indigo-100/50 uppercase tracking-wider">
-            {isRTL ? (language === 'fa' ? 'تراز راست‌گرد (RTL)' : 'RTL Layout') : (language === 'fa' ? 'تراز چپ‌گرد (LTR)' : 'LTR Layout')}
-          </span>
-        </div>
-      </div>
-
       {/* Main Preview Render Canvas */}
       <div ref={previewRef} onScroll={onScroll} className="flex-1 overflow-y-auto p-12 custom-scrollbar">
         {/* Render HTML content wrapper */}
