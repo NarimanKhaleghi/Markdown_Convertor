@@ -1,9 +1,9 @@
-<div dir="rtl" align="center">
+<div align="center">
 
-# ✨ مبدل مارک‌داون (Markdown Converter) ✨
+# ✨ Markdown Converter ✨
 
-[![فارسی](https://img.shields.io/badge/lang-fa-blue.svg)](#)
-[![English](https://img.shields.io/badge/lang-en-red.svg)](#)
+[![فارسی](https://img.shields.io/badge/lang-fa-blue.svg)](README.fa.md)
+[![English](https://img.shields.io/badge/lang-en-red.svg)](README.md)
 
 ---
 
@@ -19,109 +19,104 @@
 
 </div>
 
-<div dir="rtl">
+## 🌟 About The Project
 
-## 🌟 درباره پروژه
+Have you ever copied text from an AI assistant and ended up with a bunch of `*`, `#`, `-` symbols scattered everywhere? Those are **Markdown formatting elements** – a lightweight markup language commonly used by AI models to structure text.
 
-احتمالاً برای شما هم پیش اومده که یک متن رو از ابزارهای هوش مصنوعی کپی میکنید و ناگهان با کلی `*`، `#`، `-` و... روبه‌رو میشوید. این‌ها علائم **زبان مارک‌داون (Markdown)** هستند که هوش مصنوعی برای قالب‌بندی متن‌هاش ازش استفاده میکنه.
+**Markdown Converter** is a **modern, completely free web application** that solves this problem forever. Just paste your Markdown text, upload a file, or even provide a link – and get a clean, formatted output in various formats.
 
-**مبدل مارک‌داون** یک **برنامه وب مدرن و کاملاً رایگان** هست که این مشکل رو برای همیشه حل میکنه. کافیه متن مارک‌داون خودتون رو کپی کنید، فایل مربوطه رو آپلود کنید یا حتی یک لینک به برنامه بدید تا همه کارهاتون رو تمیز و مرتب به فرمت‌های مختلف دریافت کنید.
+[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-md.thepm.ir-blue?style=for-the-badge)](https://md.thepm.ir)
 
-[![لینک دسترسی به برنامه](https://img.shields.io/badge/🌐%20دسترسی%20آنلاین-md.thepm.ir-blue?style=for-the-badge)](https://md.thepm.ir)
+## 🎯 Key Features
 
-## 🎯 قابلیت‌های کلیدی
+| Feature | Description |
+|:--------|:------------|
+| 🔄 **Format Conversion** | Instantly convert Markdown to **HTML**, **Word (.docx)**, **TXT**, or copy **clean raw text** without any Markdown symbols |
+| 📂 **Multiple Input Methods** | Simple copy/paste, upload relevant files, or import content directly from a **URL link** |
+| ✍️ **Markdown Editor** | A full-featured note‑taking environment with Markdown editing tools |
+| 🖥️ **Live Split‑Screen Preview** | On desktop, view both the source Markdown and the rendered output simultaneously in two separate panes |
+| 📱 **Responsive & PWA** | Fully responsive design for all devices, plus **Progressive Web App (PWA)** support for offline usage after installation |
+| 🌗 **Dark / Light Mode** | Toggle between dark and light themes for a comfortable visual experience |
+| 🌐 **Smart RTL/LTR Support** | Automatic text direction detection for perfect display of both Persian and English |
 
-| ویژگی | توضیحات |
-|:------|:---------|
-| 🔄 **تبدیل فرمت‌ها** | تبدیل فوری متن به فرمت‌های **HTML**، **Word**، **TXT** و **کپی متن خام** بدون علائم مارک‌داون |
-| 📂 **ورودی‌های متنوع** | امکان کپی/پیست ساده، آپلود فایل‌های مرتبط و وارد کردن متن از طریق **لینک** |
-| ✍️ **ویرایشگر مارک‌داون حرفه‌ای** | یک محیط کامل برای **نت‌نویسی (Note Taking)** با زبان مارک‌داون که مجهز به ابزارهای ویرایش است |
-| 🖥️ **پیش‌نمایش زنده دو پنجره‌ای (Split View)** | در حالت دسکتاپ، می‌توانید همزمان کد مارک‌داون و خروجی نهایی را در دو پنجره مجزا ببینید |
-| 📱 **واکنش‌گرا (Responsive) و PWA** | طراحی کاملاً واکنش‌گرا برای تمام دستگاه‌ها و قابلیت **نصب به عنوان یک برنامه وب پیشرفته (PWA)** برای استفاده کاملاً آفلاین |
-| 🌗 **حالت شب و روز** | پشتیبانی از تم‌های روشن و تاریک برای تجربه بصری بهتر |
-| 🌐 **پشتیبانی هوشمند از زبان فارسی و انگلیسی** | تشخیص خودکار جهت متن (RTL یا LTR) برای نمایش دقیق و بدون مشکل |
+## ⚙️ Technologies Used
 
-## ⚙️ تکنولوژی‌های به‌کار رفته
-
-| بخش | تکنولوژی |
-|:----|:----------|
-| **Core Framework** | [React 19.0.1](https://reactjs.org/)  &  [TypeScript 5.8](https://www.typescriptlang.org/) |
+| Area | Technology |
+|:-----|:-----------|
+| **Core Framework** | [React 19.0.1](https://reactjs.org/) & [TypeScript 5.8](https://www.typescriptlang.org/) |
 | **Build Tool** | [Vite 6.2](https://vitejs.dev/) |
-| **Styling & UI** | [Tailwind CSS 4.1](https://tailwindcss.com/) (via `@tailwindcss/vite`), [Lucide React](https://lucide.dev/), [Motion](https://motion.dev/) برای انیمیشن‌ها |
-| **Markdown Processing & Export** | موتورهای سفارشی خروجی‌گیری برای HTML, Word, و TXT, [Mammoth.js](https://github.com/mwilliamson/mammoth.js) برای پردازش فایل‌های Word |
-| **PWA (Progressive Web App)** | پیکربندی کامل PWA برای استفاده آفلاین و نصب روی دستگاه |
-| **DevOps & Backend (برای حالت سرور)** | [Express 4.21](https://expressjs.com/) برای اجرای سرور, [dotenv](https://github.com/motdotla/dotenv), [esbuild](https://esbuild.github.io/) |
-| **Testing & Linting** | TypeScript Compiler (`tsc --noEmit`) |
-| **Hosting & Domain** | [GitHub Pages](https://pages.github.com/) (با تنظیمات CNAME برای دامنه `md.thepm.ir`) |
+| **Styling & UI** | [Tailwind CSS 4.1](https://tailwindcss.com/) (via `@tailwindcss/vite`), [Lucide React](https://lucide.dev/), [Motion](https://motion.dev/) |
+| **Markdown Processing** | Custom export engines for HTML, Word, TXT; [Mammoth.js](https://github.com/mwilliamson/mammoth.js) for Word file handling |
+| **PWA** | Full PWA configuration for offline usage and installation |
+| **Backend (optional)** | [Express 4.21](https://expressjs.com/) (server-side support), [dotenv](https://github.com/motdotla/dotenv), [esbuild](https://esbuild.github.io/) |
+| **Hosting** | [GitHub Pages](https://pages.github.com/) (with custom domain `md.thepm.ir`) |
 
-## 💻 نحوه نصب و راه‌اندازی (برای اجرای محلی)
+## 💻 Local Installation & Setup
 
-برای اجرای پروژه روی سیستم خودتون، کافیست مراحل زیر را دنبال کنید:
+To run the project locally:
 
-1.  **پیش‌نیازها:** مطمئن شوید [Node.js](https://nodejs.org/) روی سیستم شما نصب باشد.
-2.  **کلون کردن مخزن:**
-    ```bash
-    git clone https://github.com/NarimanKhaleghi/Markdown_Converter.git
-    ```
-3.  **ورود به پوشه پروژه:**
-    ```bash
-    cd Markdown_Converter
-    ```
-4.  **نصب وابستگی‌ها:**
-    ```bash
-    npm install
-    ```
-5.  **تنظیم متغیرهای محیطی (در صورت نیاز):**
-    یک فایل `.env.local` در روت پروژه ایجاد کرده و کلید API خود را برای سرویس Gemini (در صورت استفاده از قابلیت‌های هوش مصنوعی) در آن قرار دهید:
-    ```
-    GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-    ```
-6.  **اجرای برنامه در حالت توسعه:**
-    ```bash
-    npm run dev
-    ```
-    برنامه روی آدرس `http://localhost:3000` در دسترس خواهد بود.
+1. **Prerequisites:** Make sure [Node.js](https://nodejs.org/) is installed.
+2. **Clone the repository:**
+   ```bash
+   git clone https://github.com/NarimanKhaleghi/Markdown_Converter.git
+   ```
+3. **Navigate to the project folder:**
+   ```bash
+   cd Markdown_Converter
+   ```
+4. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+5. **Environment variables (if needed):**
+   Create a `.env.local` file in the root directory for the Gemini API key (if using AI features):
+   ```
+   GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+   ```
+6. **Run in development mode:**
+   ```bash
+   npm run dev
+   ```
+   The app will be available at `http://localhost:3000`.
 
-7.  **ساخت نسخه نهایی برای部署 (Deployment):**
-    ```bash
-    npm run build
-    ```
+7. **Build for production:**
+   ```bash
+   npm run build
+   ```
 
-## 📊 آمار و وضعیت مخزن
+## 📊 Repository Statistics
 
-بر اساس آخرین اطلاعات دریافتی از GitHub:
+Based on the latest GitHub data:
 
-*   **ستاره‌ها:** 0
-*   **فورک‌ها:** 0
-*   **واچرها:** 0
-*   **آخرین کامیت:** [Update App.tsx](https://github.com/NarimanKhaleghi/Markdown_Converter/commit/69c0a5a3f73087884b876290aecff416a52cd93e) (8 ژوئن 2026)
-*   **تعداد کامیت‌ها:** 23
-*   **زبان‌های اصلی:** TypeScript (96.5%), JavaScript (1.4%), HTML (1.2%), CSS (0.9%)
-*   **تعداد مشارکت‌کنندگان:** [1 مشارکت‌کننده](https://github.com/NarimanKhaleghi/Markdown_Converter/graphs/contributors) (NarimanKhaleghi)
+- **Stars:** 0
+- **Forks:** 0
+- **Watchers:** 0
+- **Last Commit:** [Update App.tsx](https://github.com/NarimanKhaleghi/Markdown_Converter/commit/69c0a5a3f73087884b876290aecff416a52cd93e) (June 8, 2026)
+- **Total Commits:** 23
+- **Primary Languages:** TypeScript (96.5%), JavaScript (1.4%), HTML (1.2%), CSS (0.9%)
+- **Contributors:** [1 contributor](https://github.com/NarimanKhaleghi/Markdown_Converter/graphs/contributors) (NarimanKhaleghi)
 
-## 🤝 مشارکت در توسعه
+## 🤝 Contributing
 
-این پروژه با ❤️ توسعه داده شده و **کاملاً متن‌باز (Open Source)** است. اگر ایده، پیشنهاد یا بهبودی مدنظر دارید:
+This project is **Open Source** and contributions are welcome!
 
-1.  Fork کنید
-2.  Branch جدید بسازید (`git checkout -b feature/AmazingFeature`)
-3.  Commit کنید (`git commit -m 'Add some AmazingFeature'`)
-4.  Push کنید (`git push origin feature/AmazingFeature`)
-5.  Pull Request ارسال کنید
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-همچنین می‌توانید با **ثبت Issue** یا **ایجاد Discussion** در صفحه مخزن، ما را در بهتر شدن این ابزار یاری کنید.
+You can also help by filing **Issues** or starting **Discussions** on the repository page.
 
-## ⭐ حمایت
+## ⭐ Support
 
-اگر این پروژه براتون مفید بوده و خوشتون اومده، لطفاً با **زدن یک ستاره ⭐ در گیتهاب** از ما حمایت کنید. این کار انرژی مضاعفی برای ادامه توسعه پروژه به ما میده.
+If you find this project useful, please consider **giving it a star ⭐ on GitHub**. It really motivates further development!
 
 [![GitHub stars](https://img.shields.io/github/stars/NarimanKhaleghi/Markdown_Converter?style=social)](https://github.com/NarimanKhaleghi/Markdown_Converter)
 
 ---
 
-**لینک‌های مفید:**
+**Useful Links:**
 
-*   **دسترسی آنلاین به برنامه:** [md.thepm.ir](https://md.thepm.ir)
-*   **مخزن پروژه در گیتهاب:** [github.com/NarimanKhaleghi/Markdown_Converter](https://github.com/NarimanKhaleghi/Markdown_Converter)
-
-</div>
+- **Live App:** [md.thepm.ir](https://md.thepm.ir)
+- **GitHub Repository:** [github.com/NarimanKhaleghi/Markdown_Converter](https://github.com/NarimanKhaleghi/Markdown_Converter)
